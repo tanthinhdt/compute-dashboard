@@ -162,8 +162,8 @@ function updateConnectionStatus(state, label) {
     dot.style.background = "#10b981";
     dot.style.boxShadow = "0 0 8px #10b981";
   } else if (state === "polling") {
-    dot.style.background = "#38bdf8";
-    dot.style.boxShadow = "0 0 8px #38bdf8";
+    dot.style.background = "var(--text-link)";
+    dot.style.boxShadow = "0 0 8px var(--text-link)";
   } else if (state === "connecting" || state === "warning") {
     dot.style.background = "#f59e0b";
     dot.style.boxShadow = "0 0 8px #f59e0b";
@@ -422,9 +422,9 @@ function renderOverviewPage(orgs, container) {
   if (!html) {
     if (myJobsOnlyFilter) {
       html = `
-        <div style="text-align: center; padding: 60px 24px; background: rgba(15, 23, 42, 0.45); border-radius: 14px; border: 1px dashed var(--border-color); margin: 20px 0;">
+        <div style="text-align: center; padding: 60px 24px; background: var(--bg-card); border-radius: 14px; border: 1px dashed var(--border-color); margin: 20px 0;">
           <div style="font-size: 38px; margin-bottom: 12px;">⭐</div>
-          <h3 style="font-size: 18px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px;">No Active Jobs Found</h3>
+          <h3 style="font-size: 18px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">No Active Jobs Found</h3>
           <p style="font-size: 14px; color: var(--text-dim); max-width: 520px; margin: 0 auto 20px auto;">
             You currently have no active running jobs across the configured resources.
           </p>
@@ -508,7 +508,7 @@ function renderOverviewCard(node) {
 function renderCardMetricsBar(node) {
   if (node.status === "OFFLINE") {
     return `
-      <div style="font-size: 12px; color: #f87171; padding: 8px 12px; background: rgba(239, 68, 68, 0.08); border-radius: 6px;">
+      <div style="font-size: 12px; color: var(--text-danger); padding: 8px 12px; background: rgba(239, 68, 68, 0.08); border-radius: 6px;">
         Unreachable · SSH connection timed out
       </div>
     `;
@@ -537,7 +537,7 @@ function renderCardMetricsBar(node) {
         <div class="compact-metric-item">
           <div class="compact-metric-label">
             <span>Reset</span>
-            <span class="compact-metric-val" style="color: #38bdf8;">${escapeHtml(kq.refresh_countdown || "Soon")}</span>
+            <span class="compact-metric-val" style="color: var(--text-link);">${escapeHtml(kq.refresh_countdown || "Soon")}</span>
           </div>
         </div>
       </div>
@@ -594,7 +594,7 @@ function renderCardMetricsBar(node) {
             <span class="compact-metric-val">${node.cpu_count}c</span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill" style="width: 100%; background: rgba(255,255,255,0.12);"></div>
+            <div class="progress-fill" style="width: 100%; background: var(--progress-neutral);"></div>
           </div>
         </div>
       `
@@ -651,7 +651,7 @@ function renderDetailPage(nodeId, container) {
           <span>/</span>
           <span>${escapeHtml(cluster.name)}</span>
           <span>/</span>
-          <span style="color: #fff; font-weight: 600;">${escapeHtml(node.name)}</span>
+          <span style="color: var(--text-main); font-weight: 600;">${escapeHtml(node.name)}</span>
         </div>
       </div>
 
@@ -714,7 +714,7 @@ function renderDetailPage(nodeId, container) {
         <!-- Active Jobs Stat Card -->
         <div class="detail-stat-card">
           <div class="label">Active Jobs</div>
-          <div class="value" style="color: ${myActiveJobs.length > 0 ? "#fbbf24" : "#fff"};">
+          <div class="value" style="color: ${myActiveJobs.length > 0 ? "var(--text-warning)" : "var(--text-main)"};">
             ${myActiveJobs.length + otherActiveJobs.length} Jobs
           </div>
           <div class="sub" style="margin-top: 6px;">
@@ -768,7 +768,7 @@ function renderStandardDetailSections(node, myActiveJobs, otherActiveJobs) {
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px;">
                     <span>VRAM Usage</span>
-                    <span style="font-family: var(--font-mono); color: #fff;">${formatBytesGB(gpu.memory_used_mb)} / ${formatBytesGB(gpu.memory_total_mb)} (${vramPct.toFixed(0)}%)</span>
+                    <span style="font-family: var(--font-mono); color: var(--text-main);">${formatBytesGB(gpu.memory_used_mb)} / ${formatBytesGB(gpu.memory_total_mb)} (${vramPct.toFixed(0)}%)</span>
                   </div>
                   <div class="progress-track" style="height: 6px;">
                     <div class="progress-fill" style="width: ${vramPct}%; background: ${getProgressColor(vramPct)};"></div>
@@ -795,7 +795,7 @@ function renderStandardDetailSections(node, myActiveJobs, otherActiveJobs) {
         <span style="font-size: 13px; color: var(--text-dim);">${node.cpu_count} Cores · ${formatBytesGB(node.mem_total_mb)} RAM</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px;">
+        <div style="background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px;">
           <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Load Average</div>
           <div style="display: flex; justify-content: space-between; font-size: 13px;">
             <span>1-minute load: <strong>${node.cpu_load_1m.toFixed(2)}</strong></span>
@@ -803,7 +803,7 @@ function renderStandardDetailSections(node, myActiveJobs, otherActiveJobs) {
             <span>15-minute load: <strong>${node.cpu_load_15m.toFixed(2)}</strong></span>
           </div>
         </div>
-        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px;">
+        <div style="background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px;">
           <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Memory Breakdown</div>
           <div style="display: flex; justify-content: space-between; font-size: 13px;">
             <span>Used: <strong>${formatBytesGB(node.mem_used_mb)}</strong></span>
@@ -867,7 +867,7 @@ function renderStandardDetailSections(node, myActiveJobs, otherActiveJobs) {
                   <td style="font-family: var(--font-mono); font-weight: 600;">
                     ${job.is_my_job ? "⭐ " : ""}${escapeHtml(job.id)}
                   </td>
-                  <td style="font-weight: 500; color: #fff;">${escapeHtml(job.name)}</td>
+                  <td style="font-weight: 500; color: var(--text-main);">${escapeHtml(job.name)}</td>
                   <td>
                     <span class="job-user-badge ${job.is_my_job ? "my-badge" : ""}">
                       ${escapeHtml(job.user)}
@@ -918,10 +918,10 @@ function renderKaggleDetailSection(node) {
         <span class="quota-countdown">⏳ Quota resets in ${escapeHtml(kq.refresh_countdown || "Soon")}</span>
       </div>
 
-      <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px;">
+      <div style="background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
           <div>
-            <span style="font-size: 28px; font-weight: 700; font-family: var(--font-mono); color: #38bdf8;">${remHrs.toFixed(1)} Hours</span>
+            <span style="font-size: 28px; font-weight: 700; font-family: var(--font-mono); color: var(--text-link);">${remHrs.toFixed(1)} Hours</span>
             <span style="font-size: 14px; color: var(--text-muted); margin-left: 8px;">remaining of ${allowedHrs.toFixed(0)} hours weekly limit</span>
           </div>
           <div style="font-size: 14px; font-family: var(--font-mono); color: var(--text-dim);">${usedHrs.toFixed(1)}h consumed (${pct}%)</div>
@@ -957,14 +957,14 @@ function renderKaggleDetailSection(node) {
             <tbody>
               ${node.jobs.map((j) => `
                 <tr data-key="job:${escapeHtml(j.id)}">
-                  <td style="font-family: var(--font-mono); font-weight: 600; color: #fff;">${escapeHtml(j.id)}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-main);">${escapeHtml(j.id)}</td>
                   <td>${escapeHtml(j.name)}</td>
                   <td style="font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(j.time)}</td>
                   <td>
                     <span class="status-pill ${j.state === "RUNNING" ? "online" : "idle"}">${escapeHtml(j.state)}</span>
                   </td>
                   <td>
-                    ${j.url ? `<a href="${j.url}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Open on Kaggle ↗</a>` : "-"}
+                    ${j.url ? `<a href="${j.url}" target="_blank" style="color: var(--text-link); text-decoration: none; font-weight: 500;">Open on Kaggle ↗</a>` : "-"}
                   </td>
                 </tr>
               `).join("")}

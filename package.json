@@ -1,6 +1,10 @@
 {
   "name": "compute-dashboard-tests",
   "private": true,
-  "scripts": {"test": "node tests/frontend.cjs"},
-  "devDependencies": {"jsdom": "^26.1.0"}
+  "scripts": {
+    "test": "node tests/frontend.cjs && node tests/theme.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
 }

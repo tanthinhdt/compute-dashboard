@@ -6,6 +6,8 @@ const dom = new JSDOM(fs.readFileSync('static/index.html', 'utf8'), {
   url: 'http://localhost/', runScripts: 'outside-only',
 });
 const { window } = dom;
+window.eval(fs.readFileSync('static/theme.js', 'utf8'));
+window.dashboardTheme.bind();
 window.eval(fs.readFileSync('static/app.js', 'utf8') + '\nwindow.testRun = (code) => eval(code);');
 const run = (code) => window.testRun(code);
 class FakeEventSource {
@@ -158,7 +160,7 @@ assert.equal(run('scheduledSpan.span'), 5);
 assert.match(doc.querySelector('[data-key="event:cluster:slurm:multi"] .calendar-end').textContent, /Scheduled end \(time limit\):/);
 assert.match(run('renderCalendarEvent({key:"unknown", nodes:[{id:"one",name:"Host"}],job:{id:"p",name:"test",state:"RUNNING",started_at:"2026-10-26T12:00:00"}})'), /End time unknown/);
 assert.match(run('renderCalendarEvent({key:"ended", nodes:[{id:"one",name:"Host"}],job:{id:"p",name:"test",state:"COMPLETE",started_at:"2026-10-26T12:00:00",ended_at:"2026-10-27T18:00:00"}})'), /Ended:/);
-assert.equal(doc.querySelector('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), '/static/favicon.svg?v=2');
+assert.equal(doc.querySelector('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), '/static/favicon.svg?v=3');
 // Nine jobs owned by three teammates must not be labeled nine teammates.
 run(`window.nineJobs = Array.from({length:9}, (_, index) => ({id:String(index), name:"Job", user:["alice","bob","carol"][index % 3], state:index === 8 ? "PD" : "RUNNING", type:"slurm", time:"1:00", resources:"GPU", gpu_processes:index === 8 ? [] : [{pid:String(100+index), command:"python", memory_used_mb:100, gpu_indices:[index % 8]}]}));
 window.nineJobMarkup = renderStandardDetailSections({...fixture.organizations[0].clusters[0].nodes[0], jobs:nineJobs}, [], nineJobs);`);
@@ -192,5 +194,10 @@ run('fixture.network.stale = true; render();');
 assert.match(doc.querySelector('.network-view').textContent,/not current/);
 run('fixture.network = {enabled:false}; render();');
 assert.match(doc.querySelector('#organizations-container').textContent,/monitoring is disabled/);
+assert.equal(doc.querySelector('.brand-icon img').getAttribute('src'), '/static/brand.svg');
+doc.getElementById('btn-theme').click();
+const chosenTheme=doc.documentElement.dataset.theme;
+run('render();');
+assert.equal(doc.documentElement.dataset.theme,chosenTheme);
 console.log('Frontend checks passed: SSE identity, selection, 100 structural updates, group cards, calendar routing, deduplication, week navigation, continuous multi-day bars, week clipping, midnight boundaries and filters.');
 dom.window.close();

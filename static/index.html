@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Compute Dashboard</title>
-  <link rel="icon" href="/favicon.ico?v=2" sizes="16x16 32x32 48x48">
-  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=2" sizes="any">
-  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="icon" href="/favicon.ico?v=3" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=3" sizes="any">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=3">
+  <meta name="color-scheme" content="light dark">
+  <script src="/static/theme.js"></script>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -15,7 +17,7 @@
     <!-- Top Header -->
     <header class="header">
       <div class="brand" title="Click to return to dashboard overview">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon"><img src="/static/brand.svg" alt="" width="42" height="42"></div>
         <div class="brand-text">
           <h1>Compute Dashboard</h1>
           <p>Clusters · Workstations · Cloud</p>
@@ -23,6 +25,7 @@
       </div>
 
       <div class="header-controls">
+        <button id="btn-theme" class="btn" type="button" aria-label="Switch color theme">Theme</button>
         <!-- Security Badge -->
         <div class="security-badge" title="Access controlled by deployment network policy">
           <div class="dot"></div>
@@ -31,7 +34,7 @@
         </div>
 
         <!-- Connection status -->
-        <div class="security-badge" style="background: rgba(255, 255, 255, 0.05); border-color: var(--border-color); color: var(--text-muted);">
+        <div class="security-badge" style="background: var(--bg-soft); border-color: var(--border-color); color: var(--text-muted);">
           <div id="stream-dot" class="pulse-dot" style="background: #10b981;"></div>
           <span id="stream-status-text">Live SSE</span>
         </div>

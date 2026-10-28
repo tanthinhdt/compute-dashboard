@@ -168,3 +168,11 @@ synthetic data; no private configuration or credentials are included.
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+
+## Appearance
+
+Use the header's Light mode / Dark mode button to switch themes. The initial theme
+follows the browser's system preference; an explicit choice is remembered locally
+and shared across tabs. Theme selection is applied before styles load to avoid a
+flash. The header, favicon and touch icon use the same compute-chip design.
