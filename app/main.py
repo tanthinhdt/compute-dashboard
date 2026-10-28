@@ -83,6 +83,12 @@ async def serve_node_page(request: Request, node_id: str):
         return FileResponse(index_file)
     return HTMLResponse("<h1>Dashboard UI loading...</h1>")
 
+@app.get("/api/network", tags=["Network"])
+async def network_status():
+    """Read cached directional observations; this does not trigger probes."""
+    return collector.network_monitor.snapshot()
+
+
 @app.get("/api/metrics", response_model=DashboardResponse)
 async def get_metrics(request: Request):
     data = await collector.get_latest_metrics()

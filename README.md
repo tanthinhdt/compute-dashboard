@@ -85,6 +85,45 @@ using Kaggle's supported credential setup outside the repository, and add:
   probes provide snapshots, not a complete historical job archive.
 - Live updates preserve DOM nodes and selection. The calendar uses browser timezone.
 
+## Network
+
+The Network tab displays a directional source-to-destination matrix with latency,
+ICMP packet loss or TCP connection failures, probe errors and sample age. It also
+lists links needing attention. It does not measure bandwidth, and a missing reply
+can reflect filtering or routing rather than a node outage.
+
+Network probing is off in the example configuration. To enable it, add an explicit
+`network` section to your private configuration:
+
+```yaml
+network:
+  enabled: true
+  interval_seconds: 60
+  attempts: 3
+  sources:
+    - {id: local, name: Local workstation, local: true}
+    - {id: gpu-a, name: GPU A, ssh_host: gpu-a-alias}
+    - {id: worker-a, name: Worker A, ssh_host: worker-a, via: scheduler-alias}
+  targets:
+    - {id: gpu-a, name: GPU A, host: gpu-a.example, mode: icmp}
+    - {id: worker-a, name: Worker A, host: worker-a.example, mode: tcp, port: 22}
+    - {id: internet, name: Internet, host: example.com, mode: tcp, port: 443}
+```
+
+A source uses the local host or an existing SSH alias. `via` supports workers
+reachable through a controller using its existing SSH access. ICMP sources need
+Linux `ping`; TCP checks use Python's standard library. Target addresses are
+resolved from each source, so choose the intended LAN, VPN or forwarded endpoint.
+Source/destination IDs matching each other are treated as self-links and skipped.
+Checks run independently of metric refresh (minimum 30 seconds, at most three
+attempts per destination); refreshing the UI does not trigger more network traffic.
+`GET /api/network` reads the cached sample, and normal SSE metrics carry it too.
+Probe launch failures remain unknown rather than being reported as 100% loss.
+TCP/DNS checks have a hard per-target deadline, so a stalled resolver cannot
+discard other results from the same source.
+Endpoint addresses and SSH settings stay in private configuration and are omitted
+from the network response. This endpoint uses the dashboard's network access policy.
+
 ## Assistant API, MCP and skill
 
 See [integrations/README.md](integrations/README.md) for API filters, a stdio MCP

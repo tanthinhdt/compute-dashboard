@@ -139,4 +139,5 @@ class DashboardResponse(BaseModel):
     client_ip: str = ""
     access_granted: bool = True
     network_info: Dict[str, Any] = Field(default_factory=dict)
+    network: Dict[str, Any] = Field(default_factory=dict)
 

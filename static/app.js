@@ -25,6 +25,8 @@ function handleRouting() {
   const match = hash.match(/^#\/node\/([a-zA-Z0-9_-]+)$/);
   if (hash === "#/calendar") {
     currentView = { type: "calendar", nodeId: null };
+  } else if (hash === "#/network") {
+    currentView = { type: "network", nodeId: null };
   } else if (match) {
     currentView = { type: "detail", nodeId: match[1] };
   } else {
@@ -313,6 +315,10 @@ function render() {
     if (ribbon) ribbon.style.display = "none";
     if (toolbar) toolbar.style.display = "none";
     renderDetailPage(currentView.nodeId, mainContainer);
+  } else if (currentView.type === "network") {
+    if (ribbon) ribbon.style.display = "none";
+    if (toolbar) toolbar.style.display = "none";
+    renderNetworkPage(mainContainer);
   } else if (currentView.type === "calendar") {
     if (ribbon) ribbon.style.display = "none";
     if (toolbar) toolbar.style.display = "flex";
@@ -1098,4 +1104,51 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function renderNetworkPage(container) {
+  const network = currentData.network || {};
+  if (!network.enabled) {
+    updatePage(container, `<section class="detail-section"><h2>Network</h2><p class="network-note">Network monitoring is disabled. Configure probe sources and destinations to monitor links between your resources.</p></section>`);
+    return;
+  }
+  const sources = network.sources || [];
+  const targets = network.targets || [];
+  const links = network.links || [];
+  const byPair = new Map(links.map((link) => [`${link.source_id}:${link.target_id}`, link]));
+  const labels = {reachable: "Reachable", degraded: "Partial replies", no_response: "No reply", source_unavailable: "Source unavailable", probe_error: "Probe unavailable"};
+  const healthy = links.filter((link) => link.status === "reachable").length;
+  const noReply = links.filter((link) => link.status === "no_response" || link.status === "degraded").length;
+  const unknown = links.length - healthy - noReply;
+  const number = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : "—";
+  const sampled = network.checked_at ? new Date(network.checked_at).toLocaleString() : "Waiting for first sample";
+  const issues = links.filter((link) => link.status !== "reachable");
+  const sourceNames = new Map(sources.map((source) => [source.id, source.name]));
+  const targetNames = new Map(targets.map((target) => [target.id, target.name]));
+  updatePage(container, `<section class="network-view">
+    <div class="calendar-header"><div><h2>Network</h2><p class="network-note">Directional connectivity between resources</p></div>
+      <span class="status-pill ${network.stale ? "mixed" : "online"}">${network.stale ? "Waiting / stale" : "Live observations"}</span></div>
+    <div class="detail-stats-grid">
+      <div class="detail-stat-card"><div class="label">Reachable links</div><div class="value">${healthy} / ${links.length}</div></div>
+      <div class="detail-stat-card"><div class="label">No / partial replies</div><div class="value">${noReply}</div></div>
+      <div class="detail-stat-card"><div class="label">Unmeasured links</div><div class="value">${unknown}</div></div>
+    </div>
+    <p class="network-note">Last sample: ${escapeHtml(sampled)} · every ${number(network.interval_seconds, 0)}s · ${number(network.attempts, 0)} attempts per link${network.checking ? " · Checking now…" : ""}${network.stale ? " · These results are not current." : ""}</p>
+    <p class="network-note">Rows are probe sources; columns are destinations. ICMP shows round-trip latency and packet loss. TCP shows connection latency and failed connections. No reply can mean routing or firewall restrictions; it does not prove the node is offline. These checks do not measure bandwidth.</p>
+    <div class="detail-section network-matrix-section" data-key="network-matrix"><div class="jobs-table-container"><table class="jobs-table network-matrix">
+      <thead><tr><th scope="col">From ↓ / To →</th>${targets.map((target) => `<th scope="col">${escapeHtml(target.name)}<span class="network-method">${target.mode === "tcp" ? "TCP" : "ICMP"}</span></th>`).join("")}</tr></thead>
+      <tbody>${sources.map((source) => `<tr data-key="source:${escapeHtml(source.id)}"><th scope="row">${escapeHtml(source.name)}</th>${targets.map((target) => {
+        if (source.id === target.id) return '<td class="network-self">Self</td>';
+        const link = byPair.get(`${source.id}:${target.id}`);
+        if (!link) return '<td><span class="network-note">Pending</span></td>';
+        const color = link.status === "reachable" ? "good" : ["degraded", "no_response"].includes(link.status) ? "warning" : "unknown";
+        const lossLabel = link.mode === "tcp" ? "failed" : "loss";
+        return `<td><div class="network-cell ${color}" title="${escapeHtml(link.error || labels[link.status] || "Unknown")}"><strong>${Number.isFinite(link.latency_ms) ? `${number(link.latency_ms)} ms` : escapeHtml(labels[link.status] || "Unknown")}</strong><span>${Number.isFinite(link.loss_pct) ? `${number(link.loss_pct)}% ${lossLabel}` : "No measurement"}</span></div></td>`;
+      }).join("")}</tr>`).join("")}</tbody>
+    </table></div></div>
+    ${!sources.length || !targets.length ? '<p class="network-note">Add at least one source and one destination to monitor connectivity.</p>' : ""}
+    <section class="detail-section" data-key="network-issues"><div class="section-header"><h3>Links to check (${issues.length})</h3></div>
+      ${issues.length ? `<div class="network-issues">${issues.map((link) => `<div class="network-issue" data-key="issue:${escapeHtml(link.source_id)}:${escapeHtml(link.target_id)}"><strong>${escapeHtml(sourceNames.get(link.source_id) || link.source_id)} → ${escapeHtml(targetNames.get(link.target_id) || link.target_id)}</strong><span>${escapeHtml(labels[link.status] || "Unknown")} · ${escapeHtml(link.error || (link.mode === "tcp" ? "TCP connection unsuccessful" : "ICMP replies incomplete or blocked"))}</span></div>`).join("")}</div>` : '<p class="network-note">No issues in the current sample.</p>'}
+    </section>
+  </section>`);
 }

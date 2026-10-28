@@ -932,3 +932,20 @@ body {
 .job-process-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; color: var(--text-muted); }
 
 .job-gpu-devices { color: #67e8f9 !important; min-width: 110px; }
+
+/* Directional network observations */
+.network-view { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.network-note { font-size: 13px; color: var(--text-muted); }
+.network-matrix-section { padding: 12px; min-width: 0; }
+.network-matrix { min-width: 760px; }
+.network-matrix th { white-space: nowrap; }
+.network-matrix td { min-width: 125px; vertical-align: middle; }
+.network-method { display: block; font-size: 10px; color: var(--text-dim); }
+.network-cell { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border-radius: 8px; font-size: 12px; }
+.network-cell span { font-size: 11px; }
+.network-cell.good { color: #6ee7b7; background: rgba(16,185,129,.08); }
+.network-cell.warning { color: #fcd34d; background: rgba(245,158,11,.08); }
+.network-cell.unknown, .network-self { color: var(--text-dim); }
+.network-issues { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(280px,100%),1fr)); gap: 12px; }
+.network-issue { display: flex; flex-direction: column; gap: 5px; padding: 12px; background: rgba(245,158,11,.05); border-radius: 8px; font-size: 12px; overflow-wrap: anywhere; }
+.network-issue span { color: var(--text-muted); }

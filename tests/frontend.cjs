@@ -172,5 +172,25 @@ assert.equal(nineJobsTemplate.content.querySelector('tbody tr:last-child .job-gp
 assert.equal(run('jobGpuLabel({state:"RUNNING",gpu_processes:[{gpu_indices:[3,0]},{gpu_indices:[3]}]})'), 'GPU #0, GPU #3');
 assert.equal(run('jobGpuLabel({state:"RUNNING"})'), 'Device not reported');
 assert.equal(run('teammateCount([{user:"Alice"},{user:"alice"},{user:" unknown "},{user:""}])'), 1);
+// Network links distinguish failed destinations from unavailable probe sources.
+run(`fixture.network = {enabled:true, interval_seconds:60, attempts:3, checked_at:"2026-10-28T10:00:00Z", stale:false,
+ sources:[{id:"a",name:"Node A"},{id:"b",name:"Node B"}],
+ targets:[{id:"a",name:"Node A",mode:"icmp"},{id:"b",name:"Node B",mode:"tcp"}],
+ links:[{source_id:"a",target_id:"b",mode:"tcp",status:"reachable",latency_ms:2.5,loss_pct:0},
+        {source_id:"b",target_id:"a",mode:"icmp",status:"source_unavailable",latency_ms:null,loss_pct:null}]};
+window.location.hash = "#/network"; handleRouting();`);
+assert.equal(doc.querySelector('a[data-view="network"]').textContent, 'Network');
+assert.match(doc.querySelector('.network-cell.good').textContent, /2.5 ms/);
+assert.match(doc.querySelector('.network-cell.unknown').textContent, /Source unavailable/);
+assert.equal(doc.querySelectorAll('.network-self').length, 2);
+assert.equal(doc.querySelector('#search-toolbar').style.display, 'none');
+const networkRow=doc.querySelector('.network-matrix tbody tr');
+run('fixture.network.links[0].latency_ms = 4.5; render();');
+assert.equal(networkRow,doc.querySelector('.network-matrix tbody tr'));
+assert.match(doc.querySelector('.network-cell.good').textContent,/4.5 ms/);
+run('fixture.network.stale = true; render();');
+assert.match(doc.querySelector('.network-view').textContent,/not current/);
+run('fixture.network = {enabled:false}; render();');
+assert.match(doc.querySelector('#organizations-container').textContent,/monitoring is disabled/);
 console.log('Frontend checks passed: SSE identity, selection, 100 structural updates, group cards, calendar routing, deduplication, week navigation, continuous multi-day bars, week clipping, midnight boundaries and filters.');
 dom.window.close();
