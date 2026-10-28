@@ -1,0 +1,2 @@
+# Maintenance-line SDK with tested FastMCP interface.
+mcp>=1.28,<2

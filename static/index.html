@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compute Dashboard</title>
+  <link rel="icon" href="/favicon.ico?v=2" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=2" sizes="any">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="header">
+      <div class="brand" title="Click to return to dashboard overview">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>Compute Dashboard</h1>
+          <p>Clusters · Workstations · Cloud</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Security Badge -->
+        <div class="security-badge" title="Access controlled by deployment network policy">
+          <div class="dot"></div>
+          <span>Network access policy</span>
+          <span id="client-ip-badge" style="opacity: 0.85; font-family: var(--font-mono); font-size: 11.5px;">...</span>
+        </div>
+
+        <!-- Connection status -->
+        <div class="security-badge" style="background: rgba(255, 255, 255, 0.05); border-color: var(--border-color); color: var(--text-muted);">
+          <div id="stream-dot" class="pulse-dot" style="background: #10b981;"></div>
+          <span id="stream-status-text">Live SSE</span>
+        </div>
+
+        <!-- My Jobs Toggle -->
+        <button id="btn-my-jobs" class="btn" title="Filter to show only nodes running your active jobs">
+          <span>⭐</span> My Jobs Only
+        </button>
+
+        <!-- Refresh Selector -->
+        <select id="refresh-select" class="select-input" title="Auto-refresh interval">
+          <option value="0" selected>⚡ Live Stream</option>
+          <option value="5">Every 5s</option>
+          <option value="10">Every 10s</option>
+          <option value="30">Every 30s</option>
+          <option value="60">Every 60s</option>
+        </select>
+
+        <!-- Manual Refresh Button -->
+        <button id="btn-refresh" class="btn btn-primary" title="Force an immediate background refresh">
+          <span id="refresh-icon">🔄</span> Refresh
+        </button>
+      </div>
+    </header>
+
+    <nav class="view-tabs" aria-label="Dashboard views">
+      <a class="btn view-tab" data-view="overview" href="#/">Resources</a>
+      <a class="btn view-tab" data-view="calendar" href="#/calendar">Calendar</a>
+    </nav>
+
+    <!-- Global Summary Ribbon -->
+    <section class="summary-ribbon" aria-label="Summary Statistics">
+      <div class="summary-card cyan">
+        <span class="summary-label">Nodes Online</span>
+        <span class="summary-value" id="sum-online-nodes">- / -</span>
+        <span class="summary-subtext">Active Compute Hosts</span>
+      </div>
+
+      <div class="summary-card purple">
+        <span class="summary-label">Cluster GPUs</span>
+        <span class="summary-value" id="sum-total-gpus">-</span>
+        <span class="summary-subtext">GPU hosts · Workstations</span>
+      </div>
+
+      <div class="summary-card blue">
+        <span class="summary-label">Cluster VRAM</span>
+        <span class="summary-value" id="sum-cluster-vram">- GB</span>
+        <span class="summary-subtext">Used / Total Cluster VRAM</span>
+      </div>
+
+      <div class="summary-card emerald">
+        <span class="summary-label">CPU Cores</span>
+        <span class="summary-value" id="sum-cpu-cores">-</span>
+        <span class="summary-subtext">Across GPU & CPU Clusters</span>
+      </div>
+
+      <div class="summary-card amber">
+        <span class="summary-label">My Active Jobs</span>
+        <span class="summary-value" id="sum-my-jobs">-</span>
+        <span class="summary-subtext">Active running tasks</span>
+      </div>
+
+      <div class="summary-card">
+        <span class="summary-label">Kaggle Free GPU</span>
+        <span class="summary-value" id="sum-kaggle-rem">-</span>
+        <span class="summary-subtext">Free GPU Hours Remaining</span>
+      </div>
+    </section>
+
+    <!-- Search & Filter Toolbar -->
+    <div id="search-toolbar" style="display: flex; gap: 10px; align-items: center;">
+      <input type="text" id="search-input" class="search-input" style="flex: 1;" placeholder="Search resources, jobs, or users…" aria-label="Search resources and jobs">
+    </div>
+
+    <!-- Main Content Container for Organizations & Detail Views -->
+    <main id="organizations-container">
+      <div style="text-align: center; padding: 48px 20px; color: var(--text-dim);">
+        <p style="font-size: 15px;">Connecting to compute nodes and gathering live metrics...</p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Compute Dashboard · Resource monitoring</p>
+      <p style="margin-top: 4px; color: var(--text-dim);">Configure access for your trusted network</p>
+    </footer>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

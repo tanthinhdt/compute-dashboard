@@ -1,0 +1,14 @@
+[Unit]
+Description=Compute Dashboard
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/compute-dashboard
+ExecStart=%h/compute-dashboard/.venv/bin/python -m app.main
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
