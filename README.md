@@ -176,3 +176,11 @@ Use the header's Light mode / Dark mode button to switch themes. The initial the
 follows the browser's system preference; an explicit choice is remembered locally
 and shared across tabs. Theme selection is applied before styles load to avoid a
 flash. The header, favicon and touch icon use the same compute-chip design.
+
+
+Kaggle accelerator options are a documented catalog, not account entitlements or
+live device inventory. See [Kaggle's current CLI catalog](https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md).
+Some models require competition or administrator access. The authenticated quota
+API returns GPU/TPU account totals, not a selectable-model list. CPU/RAM/VRAM and
+accelerator utilization are not inferred from quota consumption. Model-specific
+limits and actual notebook choices must be checked in Kaggle itself.

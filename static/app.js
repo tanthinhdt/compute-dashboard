@@ -454,7 +454,7 @@ function renderOverviewCard(node) {
   if (node.type === "gpu") icon = "⚡";
   else if (node.type === "cpu") icon = "🖧";
   else if (node.type === "kaggle") {
-    icon = node.id === "kaggle-tpu" ? "🧬" : "☁️";
+    icon = isKaggleTPU(node) ? "🧬" : "☁️";
   }
 
   const myActiveJobs = node.jobs.filter(
@@ -517,7 +517,7 @@ function renderCardMetricsBar(node) {
   // Kaggle Accelerator Cards
   if (node.type === "kaggle" && node.kaggle_quota) {
     const kq = node.kaggle_quota;
-    const isTPU = node.id === "kaggle-tpu";
+    const isTPU = isKaggleTPU(node);
     const usedHrs = isTPU ? kq.tpu_time_used_hours : kq.gpu_time_used_hours;
     const allowedHrs = isTPU ? kq.tpu_time_allowed_hours : kq.gpu_time_allowed_hours;
     const remHrs = Math.max(allowedHrs - usedHrs, 0);
@@ -626,7 +626,7 @@ function renderDetailPage(nodeId, container) {
   let icon = "🖥️";
   if (node.type === "gpu") icon = "⚡";
   else if (node.type === "cpu") icon = "🖧";
-  else if (node.type === "kaggle") icon = node.id === "kaggle-tpu" ? "🧬" : "☁️";
+  else if (node.type === "kaggle") icon = isKaggleTPU(node) ? "🧬" : "☁️";
 
   const myActiveJobs = node.jobs.filter(
     (j) => j.is_my_job && ["RUNNING", "R", "MIXED", "PD", "PENDING", "QUEUED"].includes(j.state)
@@ -678,6 +678,7 @@ function renderDetailPage(nodeId, container) {
 
       <!-- Key Stat Cards Grid -->
       <div class="detail-stats-grid">
+        ${node.type === "kaggle" ? renderKaggleStats(node) : `
         <!-- CPU Stat Card -->
         <div class="detail-stat-card">
           <div class="label">CPU Utilization</div>
@@ -704,10 +705,10 @@ function renderDetailPage(nodeId, container) {
 
         <!-- Accelerators Stat Card -->
         <div class="detail-stat-card">
-          <div class="label">${node.type === "kaggle" ? "Cloud Accelerator" : "GPU Accelerators"}</div>
-          <div class="value">${node.type === "kaggle" ? (node.id === "kaggle-tpu" ? "TPU v3-8" : "2x T4 / P100") : `${node.gpus.length} GPUs`}</div>
+          <div class="label">GPU Accelerators</div>
+          <div class="value">${node.gpus.length} GPUs</div>
           <div class="sub" style="margin-top: 6px;">
-            ${node.type === "kaggle" ? `Remaining: ${node.kaggle_quota ? (node.id === "kaggle-tpu" ? node.kaggle_quota.tpu_time_allowed_hours - node.kaggle_quota.tpu_time_used_hours : node.kaggle_quota.gpu_time_remaining_hours).toFixed(1) : 0}h` : `Total VRAM: ${formatBytesGB(node.total_vram_total_mb)} (${node.avg_gpu_util_pct.toFixed(0)}% Avg Util)`}
+            Total VRAM: ${formatBytesGB(node.total_vram_total_mb)} (${node.avg_gpu_util_pct.toFixed(0)}% Avg Util)
           </div>
         </div>
 
@@ -721,6 +722,7 @@ function renderDetailPage(nodeId, container) {
             <span>${myActiveJobs.length} of my jobs</span> · <span>${otherActiveJobs.length} jobs from ${teammateCount(otherActiveJobs)} teammates</span>
           </div>
         </div>
+        `}
       </div>
 
       <!-- In-Depth Metrics Sections -->
@@ -904,7 +906,7 @@ function renderKaggleDetailSection(node) {
     return `<div class="detail-section"><p>No quota information found.</p></div>`;
   }
 
-  const isTPU = node.id === "kaggle-tpu";
+  const isTPU = isKaggleTPU(node);
   const usedHrs = isTPU ? kq.tpu_time_used_hours : kq.gpu_time_used_hours;
   const allowedHrs = isTPU ? kq.tpu_time_allowed_hours : kq.gpu_time_allowed_hours;
   const remHrs = Math.max(allowedHrs - usedHrs, 0);
@@ -914,7 +916,7 @@ function renderKaggleDetailSection(node) {
     <!-- Kaggle Quota Progress -->
     <div class="detail-section">
       <div class="section-header">
-        <h3>☁️ Free Accelerator Quota (${isTPU ? "Google Cloud TPU v3-8" : "2x NVIDIA T4 / P100"})</h3>
+        <h3>☁️ Free Accelerator Quota (${isTPU ? "TPU account" : "GPU account"})</h3>
         <span class="quota-countdown">⏳ Quota resets in ${escapeHtml(kq.refresh_countdown || "Soon")}</span>
       </div>
 
@@ -931,6 +933,8 @@ function renderKaggleDetailSection(node) {
         </div>
       </div>
     </div>
+
+    ${renderKaggleOptions(node)}
 
     <!-- Kaggle Notebook Runs -->
     <div class="detail-section">
@@ -1151,4 +1155,29 @@ function renderNetworkPage(container) {
       ${issues.length ? `<div class="network-issues">${issues.map((link) => `<div class="network-issue" data-key="issue:${escapeHtml(link.source_id)}:${escapeHtml(link.target_id)}"><strong>${escapeHtml(sourceNames.get(link.source_id) || link.source_id)} → ${escapeHtml(targetNames.get(link.target_id) || link.target_id)}</strong><span>${escapeHtml(labels[link.status] || "Unknown")} · ${escapeHtml(link.error || (link.mode === "tcp" ? "TCP connection unsuccessful" : "ICMP replies incomplete or blocked"))}</span></div>`).join("")}</div>` : '<p class="network-note">No issues in the current sample.</p>'}
     </section>
   </section>`);
+}
+
+function isKaggleTPU(node) {
+  return node.accelerator_kind === "tpu" || node.id === "kaggle-tpu";
+}
+
+function renderKaggleStats(node) {
+  const quota = node.kaggle_quota;
+  if (!quota) return '<div class="detail-stat-card"><div class="label">Cloud quota</div><div class="value">Unavailable</div></div>';
+  const isTPU = isKaggleTPU(node);
+  const used = isTPU ? quota.tpu_time_used_hours : quota.gpu_time_used_hours;
+  const allowed = isTPU ? quota.tpu_time_allowed_hours : quota.gpu_time_allowed_hours;
+  return `<div class="detail-stat-card"><div class="label">${isTPU ? "TPU" : "GPU"} quota remaining</div><div class="value">${Math.max(allowed - used, 0).toFixed(1)}h</div><div class="sub">Account quota, not a device reservation</div></div>
+    <div class="detail-stat-card"><div class="label">Quota consumed</div><div class="value">${used.toFixed(1)} / ${allowed.toFixed(1)}h</div><div class="sub">CPU, RAM and live accelerator utilization are not reported by this API.</div></div>
+    <div class="detail-stat-card"><div class="label">Documented accelerator options</div><div class="value">${(node.accelerator_options || []).length}</div><div class="sub">Account/session eligibility is unverified</div></div>`;
+}
+
+function renderKaggleOptions(node) {
+  const options = node.accelerator_options || [];
+  return `<section class="detail-section" data-key="accelerator-options"><div class="section-header"><h3>Documented ${isKaggleTPU(node) ? "TPU" : "GPU"} options</h3><span class="jobs-tag">Eligibility unverified</span></div>
+    <p class="network-note">These are Kaggle's documented accelerator types, not confirmed allocations for this account. Some require specific competition eligibility or administrator access. The quota API reports account totals, not the selectable models or model-specific limits. Check your notebook's Accelerator menu for your actual choices.</p>
+    <div class="accelerator-options">${options.map((option) => `<article class="accelerator-option" data-key="accelerator:${escapeHtml(option.id)}"><strong>${escapeHtml(option.name)}</strong><code>${escapeHtml(option.id)}</code><span>${escapeHtml(option.access_note)}</span></article>`).join("") || '<p class="network-note">No accelerator catalog reported.</p>'}</div>
+    <p class="network-note">${isKaggleTPU(node) ? "The old TPU v3-8 label is retired." : "P100 was retired on September 15, 2026; it is not listed as a current option."} Quota is shown once for this accelerator family.</p>
+    <a class="catalog-source" href="https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md" target="_blank" rel="noopener noreferrer">Kaggle's accelerator documentation ↗</a>
+  </section>`;
 }

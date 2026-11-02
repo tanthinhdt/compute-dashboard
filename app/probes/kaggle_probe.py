@@ -6,7 +6,7 @@ import time
 from typing import Dict, List, Optional
 from dateutil import parser as dt_parser
 
-from app.models import GPUMetrics, JobInfo, KaggleQuota, NodeMetrics
+from app.models import AcceleratorOption, JobInfo, KaggleQuota, NodeMetrics
 
 logger = logging.getLogger("kaggle_probe")
 
@@ -15,6 +15,23 @@ def parse_seconds(val) -> float:
         return 0.0
     m = re.search(r"([0-9]+(?:\.[0-9]+)?)", str(val))
     return float(m.group(1)) if m else 0.0
+
+# Documented catalog, not account entitlements or live device inventory.
+CATALOG_SOURCE = "https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md"
+RESTRICTED_NOTE = "May require competition eligibility or administrator access; account availability unverified"
+GPU_OPTIONS = [
+    AcceleratorOption(id="NvidiaTeslaT4", name="NVIDIA T4 ×2", access_note="Default GPU option; session availability unverified"),
+    AcceleratorOption(id="NvidiaTeslaA100", name="NVIDIA A100", access_note=RESTRICTED_NOTE),
+    AcceleratorOption(id="NvidiaL4", name="NVIDIA L4", access_note=RESTRICTED_NOTE),
+    AcceleratorOption(id="NvidiaL4X1", name="NVIDIA L4 ×1", access_note=RESTRICTED_NOTE),
+    AcceleratorOption(id="NvidiaH100", name="NVIDIA H100", access_note=RESTRICTED_NOTE),
+    AcceleratorOption(id="NvidiaRtxPro6000", name="NVIDIA RTX PRO 6000", access_note=RESTRICTED_NOTE),
+]
+TPU_OPTIONS = [
+    AcceleratorOption(id="TpuV5E8", name="TPU v5e-8", access_note="Account/session availability unverified"),
+    AcceleratorOption(id="TpuV6E8", name="TPU v6e-8", access_note=RESTRICTED_NOTE),
+]
+
 
 class KaggleProbe:
     def __init__(self, username: str):
@@ -42,7 +59,7 @@ class KaggleProbe:
             
             # Fetch Accelerator Quotas
             quota_resp = api.quota_view()
-            q_dict = quota_resp.to_dict() if hasattr(quota_resp, "to_dict") else {}
+            q_dict = quota_resp.to_dict() if hasattr(quota_resp, "to_dict") else quota_resp if isinstance(quota_resp, dict) else {}
             if not q_dict and isinstance(quota_resp, str):
                 try:
                     q_dict = json.loads(quota_resp)
@@ -99,13 +116,13 @@ class KaggleProbe:
                     last_run = getattr(k, "last_run_time", getattr(k, "lastRunTime", ""))
                     last_run_str = str(last_run)[:19] if last_run else "recently"
                     
-                    status_str = "COMPLETE"
+                    status_str = "UNKNOWN"
                     try:
                         st = api.kernels_status(ref)
                         if hasattr(st, "status"):
                             status_str = str(st.status).split(".")[-1].upper()
                         elif isinstance(st, dict):
-                            status_str = str(st.get("status", "COMPLETE")).upper()
+                            status_str = str(st.get("status", "UNKNOWN")).upper()
                     except Exception:
                         pass
                     
@@ -154,38 +171,18 @@ class KaggleProbe:
                 has_ever_run=gpu_quota.get("hasEverRun", True)
             )
 
-            gpu_metrics_list = [
-                GPUMetrics(
-                    index=0,
-                    name="Kaggle Free GPU (2x T4 / P100)",
-                    memory_total_mb=32768.0,
-                    memory_used_mb=round(32768.0 * (gpu_pct / 100.0), 1),
-                    memory_free_mb=round(32768.0 * ((100.0 - gpu_pct) / 100.0), 1),
-                    memory_util_pct=gpu_pct,
-                    utilization_gpu=gpu_pct
-                )
-            ]
-
             gpu_node = NodeMetrics(
                 id="kaggle-gpu",
-                name="Kaggle GPU (2x T4 / P100)",
+                name="Kaggle GPU",
                 type="kaggle",
                 role="Cloud GPU Accelerator",
-                status="BUSY" if active_jobs else "ONLINE",
+                status="ONLINE",
                 description=f"Weekly Free GPU Quota ({gpu_allowed_hours:.0f}h/wk) · @{self.username}",
                 uptime=f"Resets in {countdown_str}" if countdown_str else "Weekly Quota Active",
                 ip="kaggle.com",
-                cpu_count=4,
-                cpu_util_pct=gpu_pct,
-                mem_total_mb=30720,
-                mem_used_mb=round(30720 * (gpu_pct / 100.0), 1),
-                mem_avail_mb=round(30720 * ((100.0 - gpu_pct) / 100.0), 1),
-                mem_util_pct=gpu_pct,
-                gpus=gpu_metrics_list,
-                total_vram_total_mb=32768.0,
-                total_vram_used_mb=round(32768.0 * (gpu_pct / 100.0), 1),
-                total_vram_util_pct=gpu_pct,
-                avg_gpu_util_pct=gpu_pct,
+                accelerator_kind="gpu",
+                accelerator_options=GPU_OPTIONS,
+                accelerator_catalog_source=CATALOG_SOURCE,
                 kaggle_quota=gpu_quota_obj,
                 jobs=all_kernels,
                 my_jobs_count=len(active_jobs),  # Only count truly active jobs
@@ -207,38 +204,18 @@ class KaggleProbe:
                 has_ever_run=tpu_quota.get("hasEverRun", False)
             )
 
-            tpu_metrics_list = [
-                GPUMetrics(
-                    index=0,
-                    name="Google Cloud TPU v3-8 (128GB HBM)",
-                    memory_total_mb=131072.0,
-                    memory_used_mb=round(131072.0 * (tpu_pct / 100.0), 1),
-                    memory_free_mb=round(131072.0 * ((100.0 - tpu_pct) / 100.0), 1),
-                    memory_util_pct=tpu_pct,
-                    utilization_gpu=tpu_pct
-                )
-            ]
-
             tpu_node = NodeMetrics(
                 id="kaggle-tpu",
-                name="Kaggle TPU (TPU v3-8)",
+                name="Kaggle TPU",
                 type="kaggle",
                 role="Cloud TPU Accelerator",
                 status="ONLINE",
                 description=f"Weekly Free TPU Quota ({tpu_allowed_hours:.0f}h/wk) · @{self.username}",
                 uptime=f"Resets in {countdown_str}" if countdown_str else "Weekly Quota Active",
                 ip="kaggle.com",
-                cpu_count=8,
-                cpu_util_pct=tpu_pct,
-                mem_total_mb=65536,
-                mem_used_mb=round(65536 * (tpu_pct / 100.0), 1),
-                mem_avail_mb=round(65536 * ((100.0 - tpu_pct) / 100.0), 1),
-                mem_util_pct=tpu_pct,
-                gpus=tpu_metrics_list,
-                total_vram_total_mb=131072.0,
-                total_vram_used_mb=round(131072.0 * (tpu_pct / 100.0), 1),
-                total_vram_util_pct=tpu_pct,
-                avg_gpu_util_pct=tpu_pct,
+                accelerator_kind="tpu",
+                accelerator_options=TPU_OPTIONS,
+                accelerator_catalog_source=CATALOG_SOURCE,
                 kaggle_quota=tpu_quota_obj,
                 jobs=[],
                 my_jobs_count=0,

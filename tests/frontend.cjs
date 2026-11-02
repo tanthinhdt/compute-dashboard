@@ -199,5 +199,17 @@ doc.getElementById('btn-theme').click();
 const chosenTheme=doc.documentElement.dataset.theme;
 run('render();');
 assert.equal(doc.documentElement.dataset.theme,chosenTheme);
+// Catalog options do not imply account eligibility or create fake hardware stats.
+run(`window.cloudNode={...fixture.organizations[0].clusters[0].nodes[0],id:"custom-cloud",name:"Cloud GPU",type:"kaggle",accelerator_kind:"gpu",jobs:[],gpus:[],kaggle_quota:{username:"example",gpu_time_used_hours:1,gpu_time_allowed_hours:30,gpu_time_remaining_hours:29,tpu_time_used_hours:0,tpu_time_allowed_hours:20},accelerator_options:[{id:"NvidiaTeslaT4",name:"NVIDIA T4 ×2",access_note:"Default; availability unverified"},{id:"NvidiaL4",name:"NVIDIA L4",access_note:"Restricted; eligibility unverified"}]};
+fixture.organizations[0].clusters[0].nodes.push(cloudNode);
+window.location.hash="#/node/custom-cloud";handleRouting();`);
+assert.equal(doc.querySelectorAll('.accelerator-option').length,2);
+assert.match(doc.querySelector('.detail-view').textContent,/Eligibility unverified/);
+assert.match(doc.querySelector('.detail-view').textContent,/NVIDIA L4/);
+assert.doesNotMatch(doc.querySelector('.detail-stats-grid').textContent,/CPU Utilization|Memory \(RAM\)|2x T4/);
+assert.match(doc.querySelector('.detail-stats-grid').textContent,/29.0h/);
+run('cloudNode.accelerator_kind="tpu";render();');
+assert.match(doc.querySelector('.detail-stats-grid').textContent,/TPU quota remaining/);
+assert.equal(run('isKaggleTPU(cloudNode)'),true);
 console.log('Frontend checks passed: SSE identity, selection, 100 structural updates, group cards, calendar routing, deduplication, week navigation, continuous multi-day bars, week clipping, midnight boundaries and filters.');
 dom.window.close();

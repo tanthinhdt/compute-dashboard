@@ -995,3 +995,9 @@ body {
 :root[data-theme="light"] .node-hero,
 :root[data-theme="light"] .summary-card { box-shadow: 0 4px 18px rgba(15,23,42,.07); }
 :root[data-theme="light"] .node-card.offline { opacity: 1; }
+
+.accelerator-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(250px,100%),1fr)); gap: 12px; }
+.accelerator-option { display: flex; flex-direction: column; gap: 7px; padding: 16px; background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.accelerator-option code { font-size: 12px; color: var(--text-link); overflow-wrap: anywhere; }
+.accelerator-option span { font-size: 12px; color: var(--text-muted); }
+.catalog-source { font-size: 13px; color: var(--text-link); }

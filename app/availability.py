@@ -40,10 +40,14 @@ def resource_snapshot(data, collected_at, max_age_seconds, *, resource_type=None
                             last_updated=node.last_updated)
                 if node.kaggle_quota:
                     quota = node.kaggle_quota
-                    is_tpu = node.id.endswith('tpu')
+                    is_tpu = node.accelerator_kind == 'tpu' or node.id.endswith('tpu')
                     remaining = (quota.tpu_time_allowed_hours - quota.tpu_time_used_hours
                                  if is_tpu else quota.gpu_time_remaining_hours)
                     item['cloud_quota_remaining_hours'] = max(remaining, 0)
+                    item['accelerator_kind'] = node.accelerator_kind
+                    item['documented_accelerators'] = [option.model_dump() for option in node.accelerator_options]
+                    item['accelerator_options_account_verified'] = False
+                    item['accelerator_catalog_source'] = node.accelerator_catalog_source
                 resources.append(item)
     return dict(schema_version='1.0',
                 collected_at=dt.datetime.fromtimestamp(collected_at, dt.timezone.utc).isoformat() if collected_at else None,
@@ -55,4 +59,5 @@ def resource_snapshot(data, collected_at, max_age_seconds, *, resource_type=None
                 resources=resources,
                 limitations=['Candidates reflect observed usage, not scheduler reservations or guaranteed availability.',
                              'Check scheduler allocation and access before running work.',
-                             'Cloud quota is reported separately and is not proof of an available accelerator.'])
+                             'Cloud quota is reported separately and is not proof of an available accelerator.',
+                             'Documented cloud accelerators are not account-verified selectable models.'])

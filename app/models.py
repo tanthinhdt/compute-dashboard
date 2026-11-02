@@ -62,6 +62,12 @@ class DiskMetrics(BaseModel):
     free_gb: float = 0.0
     usage_pct: float = 0.0
 
+class AcceleratorOption(BaseModel):
+    id: str
+    name: str
+    access_note: str
+
+
 class NodeMetrics(BaseModel):
     id: str
     name: str
@@ -97,6 +103,9 @@ class NodeMetrics(BaseModel):
     
     # Kaggle-specific quota
     kaggle_quota: Optional[KaggleQuota] = None
+    accelerator_kind: str = ""
+    accelerator_options: List[AcceleratorOption] = Field(default_factory=list)
+    accelerator_catalog_source: str = ""
     
     # Jobs
     jobs: List[JobInfo] = Field(default_factory=list)
