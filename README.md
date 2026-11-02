@@ -184,3 +184,11 @@ Some models require competition or administrator access. The authenticated quota
 API returns GPU/TPU account totals, not a selectable-model list. CPU/RAM/VRAM and
 accelerator utilization are not inferred from quota consumption. Model-specific
 limits and actual notebook choices must be checked in Kaggle itself.
+
+
+Disk Storage also shows the reported media type: SSD, HDD, Mixed, Network,
+Virtual or Unknown. Linux block-device rotational flags provide SSD/HDD labels;
+partitions inherit their parent device type, and visible LVM/RAID backing devices
+are followed. Network mounts are not assigned a guessed remote media type.
+Hardware controllers or virtualization can hide the physical backing disks, so
+these labels are best-effort host observations.

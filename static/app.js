@@ -818,12 +818,13 @@ function renderStandardDetailSections(node, myActiveJobs, otherActiveJobs) {
 
     <div class="detail-section" data-key="disks">
       <div class="section-header"><h3>💾 Disk Storage</h3></div>
+      <p class="disk-meta">SSD/HDD reflects the host’s reported block-device type. Network and virtual storage can hide the backing media.</p>
       <div class="disk-grid">
         ${(node.disks || []).length ? node.disks.map((disk) => {
           const pct = Math.min(Math.max(disk.usage_pct, 0), 100);
           return `<div class="disk-card" data-key="disk:${escapeHtml(disk.mountpoint)}">
             <div class="disk-heading"><strong>${escapeHtml(disk.mountpoint)}</strong><span>${pct.toFixed(1)}%</span></div>
-            <div class="disk-meta">${escapeHtml(disk.device)} · ${escapeHtml(disk.fstype)}</div>
+            <div class="disk-meta"><span class="disk-media-type">${escapeHtml(disk.media_type || "Unknown")}</span> ${escapeHtml(disk.device)} · ${escapeHtml(disk.fstype)}</div>
             <div class="progress-track"><div class="progress-fill" style="width: ${pct}%; background: ${getProgressColor(pct)};"></div></div>
             <div class="disk-meta">${disk.used_gb.toFixed(1)} / ${disk.total_gb.toFixed(1)} GB used · ${disk.free_gb.toFixed(1)} GB available</div>
           </div>`;

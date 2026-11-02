@@ -57,6 +57,7 @@ class DiskMetrics(BaseModel):
     mountpoint: str
     device: str = ""
     fstype: str = ""
+    media_type: str = "Unknown"
     total_gb: float = 0.0
     used_gb: float = 0.0
     free_gb: float = 0.0

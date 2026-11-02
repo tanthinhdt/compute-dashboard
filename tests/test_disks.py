@@ -42,7 +42,8 @@ class DiskTests(unittest.TestCase):
                 raise OSError()
             return SimpleNamespace(f_blocks=0 if mount == '/empty' else 100,
                                    f_bfree=40, f_bavail=30, f_frsize=1024**3)
-        with patch('builtins.open', return_value=io.StringIO(mounts)), patch('os.statvfs', side_effect=stat):
+        with patch('builtins.open', return_value=io.StringIO(mounts)), patch('os.statvfs', side_effect=stat), \
+             patch('app.probes.disk_probe.disk_media_type', return_value='Unknown'):
             disks = collect_remote_disks()
         self.assertEqual([d['mountpoint'] for d in disks], ['/', '/data disk'])
         self.assertEqual(disks[0]['used_gb'], 60)

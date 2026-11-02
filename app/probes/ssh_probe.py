@@ -7,9 +7,9 @@ from typing import Dict, List, Set, Optional
 
 from app.job_merge import merge_gpu_processes, slurm_job_id_from_cgroup
 from app.models import DiskMetrics, GPUMetrics, JobInfo, NodeMetrics
-from app.probes.disk_probe import collect_remote_disks
+from app.probes.disk_probe import collect_remote_disks, disk_media_type
 
-REMOTE_DISK_SCRIPT = inspect.getsource(collect_remote_disks)
+REMOTE_DISK_SCRIPT = inspect.getsource(disk_media_type) + "\n" + inspect.getsource(collect_remote_disks)
 
 
 def parse_slurm_timestamp(value):

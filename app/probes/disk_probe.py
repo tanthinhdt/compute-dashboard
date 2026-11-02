@@ -1,6 +1,54 @@
 """Disk collection helpers; collect_remote_disks is also sent to SSH hosts."""
 
 
+def disk_media_type(device, fstype):
+    """Best-effort Linux media type; never infer remote server backing media."""
+    import os
+    import stat
+
+    network_types = {'nfs', 'nfs4', 'cifs', 'smb3', 'smbfs', 'ceph', 'glusterfs',
+                     'fuse.glusterfs', 'fuse.sshfs', 'sshfs', 'lustre', 'afs', '9p'}
+    if fstype.lower() in network_types:
+        return 'Network'
+    if not device.startswith('/dev/'):
+        return 'Unknown'
+    try:
+        info = os.stat(device)
+        if not stat.S_ISBLK(info.st_mode):
+            return 'Unknown'
+        path = os.path.realpath('/sys/dev/block/{}:{}'.format(os.major(info.st_rdev), os.minor(info.st_rdev)))
+    except (OSError, ValueError, AttributeError):
+        return 'Unknown'
+
+    def classify(path, visited):
+        path = os.path.realpath(path)
+        if path in visited:
+            return 'Unknown'
+        visited = visited | {path}
+        # Partitions inherit their parent device's rotational flag.
+        if os.path.exists(os.path.join(path, 'partition')):
+            path = os.path.dirname(path)
+        try:
+            slaves = os.listdir(os.path.join(path, 'slaves'))
+        except OSError:
+            slaves = []
+        if slaves:
+            kinds = {classify(os.path.join(path, 'slaves', name), visited) for name in slaves}
+            if kinds == {'SSD'} or kinds == {'HDD'}:
+                return next(iter(kinds))
+            return 'Mixed' if kinds == {'SSD', 'HDD'} else 'Unknown'
+        if '/virtual/' in path or os.path.basename(path).startswith(('vd', 'xvd')):
+            return 'Virtual'
+        try:
+            with open(os.path.join(path, 'queue', 'rotational')) as stream:
+                flag = stream.read().strip()
+            return {'0': 'SSD', '1': 'HDD'}.get(flag, 'Unknown')
+        except OSError:
+            return 'Unknown'
+
+    return classify(path, set())
+
+
 def collect_remote_disks():
     # Keep imports inside this function so its source runs on hosts without psutil.
     import os
@@ -37,6 +85,7 @@ def collect_remote_disks():
         free = stat.f_bavail * stat.f_frsize
         seen.add(mountpoint)
         disks.append(dict(mountpoint=mountpoint, device=device, fstype=fstype,
+                          media_type=disk_media_type(device, fstype),
                           total_gb=round(total / 1024**3, 2),
                           used_gb=round(used / 1024**3, 2),
                           free_gb=round(free / 1024**3, 2),
@@ -70,7 +119,8 @@ def collect_local_disks():
         seen.add(partition.mountpoint)
         disks.append(DiskMetrics(
             mountpoint=partition.mountpoint, device=partition.device,
-            fstype=partition.fstype, total_gb=round(usage.total / 1024**3, 2),
+            fstype=partition.fstype,
+            media_type=disk_media_type(partition.device, partition.fstype), total_gb=round(usage.total / 1024**3, 2),
             used_gb=round(usage.used / 1024**3, 2),
             free_gb=round(usage.free / 1024**3, 2), usage_pct=usage.percent))
     return disks
